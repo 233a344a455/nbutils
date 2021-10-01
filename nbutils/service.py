@@ -8,7 +8,7 @@ from nonebot.matcher import Matcher
 from nonebot.permission import Permission
 from nonebot.typing import T_Handler
 
-from nbutils.stringres import Rstring
+from nbutils.stringres import Rstr
 
 
 class Command:
@@ -69,12 +69,12 @@ class Service:
         self.cmds: Dict[str, Command] = {}
 
         # Handle a cmd assigned to the very service, but doesn't match any cmd declared in the service.
-        _default_cmd = self.on_command(cmd=None, desc="handle default cmd")
+        _default_cmd = self.on_command(cmd=None)
 
         @_default_cmd.handle()
         async def _handle_default_cmd(bot: Bot, event: Event):
             await _default_cmd.send(
-                Rstring.UNKNOWN_CMD_REP.format(sv_name=self.sv_name, cmd=event.get_message()))
+                Rstr.EXPR_UNKNOWN_CMD.format(sv_name=self.sv_name, cmd=event.get_message(), doc=self.get_doc_str()))
 
     def get_command(self, cmd_name: str) -> Optional[Command]:
         return self.cmds.get(cmd_name, None)
@@ -110,6 +110,22 @@ class Service:
         self.cmds[cmd] = cmd_obj
 
         return cmd_obj.matcher
+
+    def get_cmds_list_str(self) -> Optional[str]:
+        if not self.cmds:
+            return None
+        return '\n'.join(
+            Rstr.FORMAT_CMDS_LIST.format(
+                cmd=(k if k else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(v.desc if v.desc else '')
+            )
+            for k, v in self.cmds.items()).strip(' ')
+
+    def get_doc_str(self) -> str:
+        cmds_list = self.get_cmds_list_str()
+        return Rstr.DOC_SERVICE_HELP.format(name=self.sv_name,
+                                            desc=(self.desc if self.desc else Rstr.EXPR_NOT_AVAILABLE),
+                                            doc=(self.sv_doc if self.sv_doc else Rstr.EXPR_NOT_AVAILABLE),
+                                            cmds_list=(cmds_list if cmds_list else Rstr.EXPR_NO_CMDS_IN_SV))
 
     def __repr__(self):
         return f"<Service '{self.sv_name}', desc='{self.desc}'>"
