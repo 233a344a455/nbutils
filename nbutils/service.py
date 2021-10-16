@@ -1,6 +1,5 @@
 from typing import Optional, Union, Tuple, Set, Type, List, Dict
 
-import nonebot
 from loguru import logger
 from nonebot.adapters import Bot, Event
 from nonebot.handler import Handler
@@ -8,34 +7,8 @@ from nonebot.matcher import Matcher
 from nonebot.permission import Permission
 from nonebot.typing import T_Handler
 
+from nbutils.command import Command
 from nbutils.stringres import Rstr
-
-
-class Command:
-    def __init__(self,
-                 cmd: str, aliases: Optional[Set[str]] = None,
-                 desc: Optional[str] = None, doc: Optional[str] = None,
-                 permission: Optional[Permission] = None,
-                 handlers: List[Union[T_Handler, Handler]] = None,
-                 matcher: Optional[Matcher] = None,
-                 **kwargs):
-
-        self.cmd = cmd
-        self.desc = desc
-        self.doc = doc
-        self.matcher = matcher
-
-        if not self.matcher:
-            if handlers:
-                kwargs['handlers'] = handlers
-            self.matcher = nonebot.on_command(cmd, aliases=aliases, **kwargs)
-
-    def __repr__(self):
-        return f"<Command '{self.cmd}', desc='{self.desc}'>"
-
-    def __str__(self):
-        return self.__repr__()
-
 
 class Service:
     """服务类，用于命令组管理。
@@ -73,8 +46,14 @@ class Service:
 
         @_default_cmd.handle()
         async def _handle_default_cmd(bot: Bot, event: Event):
-            await _default_cmd.send(
-                Rstr.EXPR_UNKNOWN_CMD.format(sv_name=self.sv_name, cmd=event.get_message(), doc=self.get_doc_str()))
+            if event.get_message():
+                await _default_cmd.send(
+                    Rstr.MSG_UNKNOWN_CMD.format(sv_name=self.sv_name, cmd=event.get_message(),
+                                                usage=self.get_usage_str()))
+            else:
+                await _default_cmd.send(
+                    Rstr.MSG_NO_CMD_INPUT.format(sv_name=self.sv_name, usage=self.get_usage_str())
+                )
 
     def get_command(self, cmd_name: str) -> Optional[Command]:
         return self.cmds.get(cmd_name, None)
@@ -100,13 +79,13 @@ class Service:
                 matcher = self.cmds[''].matcher
                 del matcher.handlers[-1]  # Delete '_handle_default_cmd' handler
 
-            self.cmds[''] = Command(self.sv_name, self.sv_aliases, desc, doc, permission, handlers, matcher, **kwargs)
+            self.cmds[''] = Command(self.sv_name, self.sv_name, self.sv_aliases, desc, doc, permission, handlers, matcher, **kwargs)
             return self.cmds[''].matcher
 
         cmd_prefix = {cmd} | (aliases or set())
         aliases = {f"{s} {c}" for s in self._sv_prefix for c in cmd_prefix} - set(f"{self.sv_name} {cmd}")
 
-        cmd_obj = Command(f"{self.sv_name} {cmd}", aliases, desc, doc, permission, handlers, **kwargs)
+        cmd_obj = Command(self.sv_name, f"{self.sv_name} {cmd}", aliases, desc, doc, permission, handlers, **kwargs)
         self.cmds[cmd] = cmd_obj
 
         return cmd_obj.matcher
@@ -116,16 +95,16 @@ class Service:
             return None
         return '\n'.join(
             Rstr.FORMAT_CMDS_LIST.format(
-                cmd=(k if k else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(v.desc if v.desc else '')
+                cmd=(k if k else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(v.desc if v.desc else ''), sv_name=self.sv_name
             )
             for k, v in self.cmds.items()).strip(' ')
 
-    def get_doc_str(self) -> str:
+    def get_usage_str(self) -> str:
         cmds_list = self.get_cmds_list_str()
-        return Rstr.DOC_SERVICE_HELP.format(name=self.sv_name,
-                                            desc=(self.desc if self.desc else Rstr.EXPR_NOT_AVAILABLE),
-                                            doc=(self.sv_doc if self.sv_doc else Rstr.EXPR_NOT_AVAILABLE),
-                                            cmds_list=(cmds_list if cmds_list else Rstr.EXPR_NO_CMDS_IN_SV))
+        return Rstr.MSG_SERVICE_USAGE.format(sv_name=self.sv_name,
+                                             desc=(self.desc if self.desc else Rstr.EXPR_NOT_AVAILABLE),
+                                             doc=(self.sv_doc if self.sv_doc else Rstr.EXPR_NOT_AVAILABLE),
+                                             cmds_list=(cmds_list if cmds_list else Rstr.EXPR_NO_CMDS_IN_SV))
 
     def __repr__(self):
         return f"<Service '{self.sv_name}', desc='{self.desc}'>"
