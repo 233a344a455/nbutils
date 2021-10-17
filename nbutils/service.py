@@ -1,14 +1,14 @@
-from typing import Optional, Union, Tuple, Set, Type, List, Dict
+from typing import Optional, Union, Tuple, Set, List, Dict
 
 from loguru import logger
 from nonebot.adapters import Bot, Event
 from nonebot.handler import Handler
-from nonebot.matcher import Matcher
 from nonebot.permission import Permission
 from nonebot.typing import T_Handler
 
 from nbutils.command import Command
 from nbutils.stringres import Rstr
+
 
 class Service:
     """服务类，用于命令组管理。
@@ -47,11 +47,11 @@ class Service:
         @_default_cmd.handle()
         async def _handle_default_cmd(bot: Bot, event: Event):
             if event.get_message():
-                await _default_cmd.send(
+                await _default_cmd.send_failed(
                     Rstr.MSG_UNKNOWN_CMD.format(sv_name=self.sv_name, cmd=event.get_message(),
                                                 usage=self.get_usage_str()))
             else:
-                await _default_cmd.send(
+                await _default_cmd.send_failed(
                     Rstr.MSG_NO_CMD_INPUT.format(sv_name=self.sv_name, usage=self.get_usage_str())
                 )
 
@@ -63,7 +63,7 @@ class Service:
                    desc: Optional[str] = None, doc: Optional[str] = None,
                    permission: Optional[Permission] = None,
                    handlers: Optional[List[Union[T_Handler, Handler]]] = None,
-                   **kwargs) -> Type[Matcher]:
+                   **kwargs) -> Command:
 
         if self.get_command(cmd):
             raise ValueError(f"Duplicated cmd_name ('{cmd}') in a service is not allowed.")
@@ -79,16 +79,18 @@ class Service:
                 matcher = self.cmds[''].matcher
                 del matcher.handlers[-1]  # Delete '_handle_default_cmd' handler
 
-            self.cmds[''] = Command(self.sv_name, self.sv_name, self.sv_aliases, desc, doc, permission, handlers, matcher, **kwargs)
-            return self.cmds[''].matcher
+            self.cmds[''] = Command(self.sv_name, '', None, self.sv_aliases, desc, doc, permission, handlers,
+                                    matcher, **kwargs)
+            return self.cmds['']
 
         cmd_prefix = {cmd} | (aliases or set())
-        aliases = {f"{s} {c}" for s in self._sv_prefix for c in cmd_prefix} - set(f"{self.sv_name} {cmd}")
+        cmd_aliases = {f"{s} {c}" for s in self._sv_prefix for c in cmd_prefix} - set(f"{self.sv_name} {cmd}")
 
-        cmd_obj = Command(self.sv_name, f"{self.sv_name} {cmd}", aliases, desc, doc, permission, handlers, **kwargs)
+        cmd_obj = Command(self.sv_name, cmd, None, cmd_aliases, desc, doc, permission, handlers,
+                          **kwargs)
         self.cmds[cmd] = cmd_obj
 
-        return cmd_obj.matcher
+        return cmd_obj
 
     def get_cmds_list_str(self) -> Optional[str]:
         if not self.cmds:
