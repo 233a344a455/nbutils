@@ -16,9 +16,9 @@ class StringRes(BaseSettings):
                        "请使用 '/{sv_name} [命令]' 调用命令，\n" \
                        "或使用 '/help {sv_name}' 获取可用命令列表。"
 
-    MSG_SERVICE_USAGE = "==== <{sv_name}> 服务帮助 ====\n\n" \
-                        "➢ 说明文档\n{doc}\n\n" \
-                        "➢ 命令列表\n{cmds_list}\n\n" \
+    MSG_SERVICE_USAGE = "<{sv_name}>服务帮助\n\n" \
+                        "► 说明文档\n{doc}\n\n" \
+                        "► 命令列表\n{cmds_list}\n\n" \
                         "使用 '/help {sv_name} [命令]' 查看命令帮助。\n" \
                         "使用 '/{sv_name} [命令] [参数]' 调用此命令。' "
 
@@ -26,8 +26,7 @@ class StringRes(BaseSettings):
     EXPR_NOT_AVAILABLE = "（无可用信息）"
     EXPR_NO_CMDS_IN_SV = "（无可用命令）"
 
-    FORMAT_CMDS_LIST = " » {cmd}\n" \
-                       + FULL_SPACE + "{desc}"
+    FORMAT_CMDS_LIST = FULL_SPACE + "» {cmd}" + FULL_SPACE + "{desc}"
 
     FORMAT_BASIC_MSG = " <{name}>: {msg}" # {time} -> %H:%M
     FORMAT_SUCC_MSG = EMOJI_SUCCEED + FORMAT_BASIC_MSG

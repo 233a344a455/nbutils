@@ -97,9 +97,10 @@ class Service:
             return None
         return '\n'.join(
             Rstr.FORMAT_CMDS_LIST.format(
-                cmd=(k if k else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(v.desc if v.desc else ''), sv_name=self.sv_name
+                cmd=(k if k else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(f"({v.desc})" if v.desc else ''),
+                sv_name=self.sv_name
             )
-            for k, v in self.cmds.items()).strip(' ')
+            for k, v in self.cmds.items())
 
     def get_usage_str(self) -> str:
         cmds_list = self.get_cmds_list_str()
