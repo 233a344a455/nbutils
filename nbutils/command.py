@@ -24,7 +24,7 @@ class Command:
 
         self.sv_name = sv_name
         self.cmd_name = cmd_name
-        self.raw_cmd = raw_cmd if raw_cmd else f"{sv_name} {cmd_name}"
+        self.raw_cmd = raw_cmd if raw_cmd else (f"{sv_name} {cmd_name}" if cmd_name else sv_name)
         self.desc = desc
         self.doc = doc
         self.matcher = matcher
