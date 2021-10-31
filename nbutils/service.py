@@ -48,12 +48,16 @@ class Service:
         async def _handle_default_cmd(bot: Bot, event: Event):
             if event.get_message():
                 await _default_cmd.send_failed(
-                    Rstr.MSG_UNKNOWN_CMD.format(sv_name=self.sv_name, cmd=event.get_message(),
+                    Rstr.MSG_UNKNOWN_CMD.format(sv=self.sv_name, cmd=event.get_message(),
                                                 usage=self.get_usage_str()))
             else:
                 await _default_cmd.send_failed(
-                    Rstr.MSG_NO_CMD_INPUT.format(sv_name=self.sv_name, usage=self.get_usage_str())
+                    Rstr.MSG_NO_CMD_INPUT.format(sv=self.sv_name, usage=self.get_usage_str())
                 )
+
+        if self.sv_name in services:
+            raise ValueError(f"Duplicated sv '{self.sv_name}' is not allowed.")
+        services[self.sv_name] = self
 
     def get_command(self, cmd_name: str) -> Optional[Command]:
         return self.cmds.get(cmd_name, None)
@@ -65,12 +69,9 @@ class Service:
                    handlers: Optional[List[Union[T_Handler, Handler]]] = None,
                    **kwargs) -> Command:
 
-        if self.get_command(cmd):
-            raise ValueError(f"Duplicated cmd_name ('{cmd}') in a service is not allowed.")
-
         if not cmd:
-            if aliases:
-                logger.warning("Aliases are not available for service default command. "
+            if aliases or desc or doc:
+                logger.warning("Aliases / desc / doc are not available for service default command. "
                                "Please set aliases for service instead.")
 
             matcher = None
@@ -82,6 +83,9 @@ class Service:
             self.cmds[''] = Command(self.sv_name, '', None, self.sv_aliases, desc, doc, permission, handlers,
                                     matcher, **kwargs)
             return self.cmds['']
+
+        if self.get_command(cmd):
+            raise ValueError(f"Duplicated cmd_name '{cmd}' in a service is not allowed.")
 
         cmd_prefix = {cmd} | (aliases or set())
         cmd_aliases = {f"{s} {c}" for s in self._sv_prefix for c in cmd_prefix} - set(f"{self.sv_name} {cmd}")
@@ -104,7 +108,7 @@ class Service:
 
     def get_usage_str(self) -> str:
         cmds_list = self.get_cmds_list_str()
-        return Rstr.MSG_SERVICE_USAGE.format(sv_name=self.sv_name,
+        return Rstr.MSG_SERVICE_USAGE.format(sv=self.sv_name,
                                              desc=(self.desc if self.desc else Rstr.EXPR_NOT_AVAILABLE),
                                              doc=(self.sv_doc if self.sv_doc else Rstr.EXPR_NOT_AVAILABLE),
                                              cmds_list=(cmds_list if cmds_list else Rstr.EXPR_NO_CMDS_IN_SV))
@@ -114,3 +118,15 @@ class Service:
 
     def __str__(self):
         return self.__repr__()
+
+    # def __eq__(self, other: Union['Service', str]):
+    #     assert isinstance(other, (Service, str)), TypeError(
+    #         f"'==' Not supported between instances of 'Service' and '{type(other)}'")
+    #     if isinstance(other, str):
+    #         return self.sv_name == other
+    #     return self.sv_name == other.sv_name
+
+
+# A dict for preserving all maintained services
+# {sv: sv_obj}
+services: Dict[str, Service] = {}

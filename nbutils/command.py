@@ -129,6 +129,10 @@ class Command:
     def get_name_str(self):
         return f"{self.sv_name}.{self.cmd_name}" if self.cmd_name else self.sv_name
 
+    def get_usage_str(self):
+        return Rstr.MSG_CMD_USAGE.format(cmd=self.get_name_str(),
+                                         doc=(self.doc if self.doc else Rstr.EXPR_NOT_AVAILABLE))
+
     def __repr__(self):
         return f"<Command '{self.sv_name}.{self.cmd_name}', desc='{self.desc}'>"
 
