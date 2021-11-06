@@ -20,6 +20,7 @@ class Command:
                  permission: Optional[Permission] = None,
                  handlers: List[Union[T_Handler, Handler]] = None,
                  matcher: Optional[Matcher] = None,
+                 hidden: bool = False,
                  **kwargs):
 
         self.sv_name = sv_name
@@ -28,6 +29,7 @@ class Command:
         self.desc = desc
         self.doc = doc
         self.matcher = matcher
+        self.hidden = hidden
 
         if not self.matcher:
             if handlers:
@@ -94,7 +96,7 @@ class Command:
     async def send(self, message: Union[str, Message, MessageSegment],
                    **kwargs):
         return await self.matcher.send(
-            Rstr.FORMAT_BASIC_MSG.format(name=f"{self.sv_name}.{self.cmd_name}", msg=message,
+            Rstr.FORMAT_BASIC_MSG.format(name=self.get_name_str(), msg=message,
                                          time=datetime.now().strftime('%H:%M')),
             **kwargs)
 

@@ -43,6 +43,7 @@ class StringRes(BaseSettings):
     EXPR_CALL_SV_DIRECTLY = "<直接调用>"
     EXPR_NOT_AVAILABLE = "（无可用信息）"
     EXPR_NO_CMDS_IN_SV = "（无可用命令）"
+    EXPR_NO_AVAILABLE_SV = "（无可用服务）"
 
     FORMAT_CMDS_LIST = FULL_SPACE + "» {cmd}" + FULL_SPACE + "{desc}"
     FORMAT_SV_LIST = FULL_SPACE + "» {sv}" + FULL_SPACE + "{desc}"

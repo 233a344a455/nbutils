@@ -6,7 +6,8 @@ from nbutils.stringres import Rstr
 
 sv_usage = Service(name='help',
                    aliases={'usage', '帮助'},
-                   desc='输出使用帮助')
+                   desc='输出使用帮助',
+                   hidden=True)
 
 cmd_usage = sv_usage.on_command('')
 
@@ -14,8 +15,11 @@ cmd_usage = sv_usage.on_command('')
 @cmd_usage.handle()
 async def _(bot: Bot, event: Event):
     sv_list = [Rstr.FORMAT_SV_LIST.format(sv=s.sv_name, desc=f'({s.desc})' if s.desc else '')
-               for s in services.values()]
-    sv_list_str = '\n'.join(sv_list)
+               for s in services.values() if not s.hidden]
+    if sv_list:
+        sv_list_str = '\n'.join(sv_list)
+    else:
+        sv_list_str = Rstr.EXPR_NO_AVAILABLE_SV
 
     args = event.get_message().extract_plain_text().split()
     # FIXME: handle cmd with space in cmd_name

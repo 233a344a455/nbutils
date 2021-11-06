@@ -30,19 +30,21 @@ class Service:
     def __init__(self, name: str,
                  aliases: Optional[Set[str]] = None,
                  desc: Optional[str] = None,
-                 doc: Optional[str] = None):
+                 doc: Optional[str] = None,
+                 hidden: bool = False):
 
         self.sv_name = name
         self.sv_aliases = aliases
         self.desc = desc
         self._sv_prefix = {name} | (aliases or set())
+        self.hidden = hidden
 
         self.sv_doc: str = doc.strip() if (doc is not None) else None
 
         self.cmds: Dict[str, Command] = {}
 
         # Handle a cmd assigned to the very service, but doesn't match any cmd declared in the service.
-        _default_cmd = self.on_command(cmd=None)
+        _default_cmd = self.on_command(cmd=None, hidden=True)
 
         @_default_cmd.handle()
         async def _handle_default_cmd(bot: Bot, event: Event):
@@ -67,6 +69,7 @@ class Service:
                    desc: Optional[str] = None, doc: Optional[str] = None,
                    permission: Optional[Permission] = None,
                    handlers: Optional[List[Union[T_Handler, Handler]]] = None,
+                   hidden: bool = False,
                    **kwargs) -> Command:
 
         if not cmd:
@@ -80,8 +83,12 @@ class Service:
                 matcher = self.cmds[''].matcher
                 del matcher.handlers[-1]  # Delete '_handle_default_cmd' handler
 
-            self.cmds[''] = Command(self.sv_name, '', None, self.sv_aliases, desc, doc, permission, handlers,
-                                    matcher, **kwargs)
+            self.cmds[''] = Command(sv_name=self.sv_name, cmd_name='', aliases=self.sv_aliases,
+                                    desc=desc, doc=doc,
+                                    permission=permission,
+                                    handlers=handlers, matcher=matcher,
+                                    hidden=hidden,
+                                    **kwargs)
             return self.cmds['']
 
         if self.get_command(cmd):
@@ -90,28 +97,33 @@ class Service:
         cmd_prefix = {cmd} | (aliases or set())
         cmd_aliases = {f"{s} {c}" for s in self._sv_prefix for c in cmd_prefix} - set(f"{self.sv_name} {cmd}")
 
-        cmd_obj = Command(self.sv_name, cmd, None, cmd_aliases, desc, doc, permission, handlers,
+        cmd_obj = Command(sv_name=self.sv_name, cmd_name=cmd, aliases=cmd_aliases,
+                          desc=desc, doc=doc,
+                          permission=permission,
+                          handlers=handlers,
+                          hidden=hidden,
                           **kwargs)
         self.cmds[cmd] = cmd_obj
 
         return cmd_obj
 
     def get_cmds_list_str(self) -> Optional[str]:
-        if not self.cmds:
-            return None
+        cmds = {c for c in self.cmds.values() if not c.hidden}
+        if not cmds:
+            return Rstr.EXPR_NO_CMDS_IN_SV
         return '\n'.join(
             Rstr.FORMAT_CMDS_LIST.format(
-                cmd=(k if k else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(f"({v.desc})" if v.desc else ''),
+                cmd=(c.cmd_name if c.cmd_name else Rstr.EXPR_CALL_SV_DIRECTLY), desc=(f"({c.desc})" if c.desc else ''),
                 sv_name=self.sv_name
             )
-            for k, v in self.cmds.items())
+            for c in cmds)
 
     def get_usage_str(self) -> str:
-        cmds_list = self.get_cmds_list_str()
+        cmds_list_str = self.get_cmds_list_str()
         return Rstr.MSG_SERVICE_USAGE.format(sv=self.sv_name,
                                              desc=(self.desc if self.desc else Rstr.EXPR_NOT_AVAILABLE),
                                              doc=(self.sv_doc if self.sv_doc else Rstr.EXPR_NOT_AVAILABLE),
-                                             cmds_list=(cmds_list if cmds_list else Rstr.EXPR_NO_CMDS_IN_SV))
+                                             cmds_list=cmds_list_str)
 
     def __repr__(self):
         return f"<Service '{self.sv_name}', desc='{self.desc}'>"
@@ -128,5 +140,5 @@ class Service:
 
 
 # A dict for preserving all maintained services
-# {sv: sv_obj}
+# {sv_name: sv_obj}
 services: Dict[str, Service] = {}
