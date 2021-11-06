@@ -9,7 +9,7 @@ from nonebot.matcher import Matcher
 from nonebot.permission import Permission
 from nonebot.typing import T_Handler, T_ArgsParser
 
-from nbutils.stringres import Rstr
+from nonutils.stringres import Rstr
 
 
 class Command:

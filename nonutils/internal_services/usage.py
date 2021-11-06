@@ -1,8 +1,8 @@
 from nonebot import Bot
 from nonebot.adapters import Event
 
-from nbutils.service import Service, services
-from nbutils.stringres import Rstr
+from nonutils.service import Service, services
+from nonutils.stringres import Rstr
 
 sv_usage = Service(name='help',
                    aliases={'usage', '帮助'},

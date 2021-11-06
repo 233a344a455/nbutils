@@ -6,8 +6,8 @@ from nonebot.handler import Handler
 from nonebot.permission import Permission
 from nonebot.typing import T_Handler
 
-from nbutils.command import Command
-from nbutils.stringres import Rstr
+from nonutils.command import Command
+from nonutils.stringres import Rstr
 
 
 class Service:
