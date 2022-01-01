@@ -1,3 +1,5 @@
 nonebot2
 loguru
 pydantic
+aiohttp
+setuptools

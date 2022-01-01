@@ -119,6 +119,8 @@ class Service:
             for c in cmds)
 
     def get_usage_str(self) -> str:
+        if len(self.cmds) == 1:
+            return Rstr.MSG_CMD_USAGE.format(cmd=self.sv_name, doc=self.sv_doc)
         cmds_list_str = self.get_cmds_list_str()
         return Rstr.MSG_SERVICE_USAGE.format(sv=self.sv_name,
                                              desc=(self.desc if self.desc else Rstr.EXPR_NOT_AVAILABLE),
