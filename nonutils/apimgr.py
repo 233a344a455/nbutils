@@ -50,7 +50,7 @@ class API(metaclass=ApiMetaClass):
 
                     if response.status != 200:
                         logger.warning(f"Call API failed: {self.url}, resp.status={response.status}")
-                        await cmd.send_failed("无法连接到服务器")
+                        await cmd.send_failure("无法连接到服务器")
                         return None
 
                     resp = json.loads(await response.text())
@@ -59,7 +59,7 @@ class API(metaclass=ApiMetaClass):
 
         except asyncio.TimeoutError:
             logger.warning(f"Call API timeout: {self.url}")
-            await cmd.send_failed("请求超时")
+            await cmd.send_failure("请求超时")
 
 
     async def get(self, cmd: Command) -> Optional[dict]:
@@ -69,7 +69,7 @@ class API(metaclass=ApiMetaClass):
                 async with client.get(self.url, timeout=self.timeout, proxy=self.proxy) as response:
                     if response.status != 200:
                         logger.error(f"Call API failed: {self.url}, resp.status={response.status}")
-                        await cmd.send_failed("无法连接到服务器")
+                        await cmd.send_failure("无法连接到服务器")
                         return None
 
                     resp = json.loads(await response.text())
@@ -78,7 +78,7 @@ class API(metaclass=ApiMetaClass):
 
         except asyncio.TimeoutError:
             logger.warning(f"Call API timeout: {self.url}")
-            await cmd.send_failed("请求超时")
+            await cmd.send_failure("请求超时")
 
     @abstractmethod
     async def test(self) -> bool:

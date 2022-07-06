@@ -34,6 +34,6 @@ async def _(bot: Bot, event: Event):
             elif sv.get_command(args[1]):
                 await cmd_usage.send(sv.get_command(args[1]).get_usage_str())
             else:
-                await cmd_usage.send_failed(Rstr.MSG_UNKNOWN_CMD_IN_SV.format(sv=args[0], cmd=args[1]))
+                await cmd_usage.send_failure(Rstr.MSG_UNKNOWN_CMD_IN_SV.format(sv=args[0], cmd=args[1]))
         else:
-            await cmd_usage.send_failed(Rstr.MSG_UNKNOWN_SV.format(sv=args[0]))
+            await cmd_usage.send_failure(Rstr.MSG_UNKNOWN_SV.format(sv=args[0]))
