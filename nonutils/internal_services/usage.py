@@ -1,39 +1,37 @@
 from nonebot import Bot
 from nonebot.adapters import Event
 
-from nonutils.service import Service, services
+from nonutils.command import Command, cmdmgr
 from nonutils.stringres import Rstr
 
-sv_usage = Service(name='help',
-                   aliases={'usage', '帮助'},
-                   desc='输出使用帮助',
-                   hidden=True)
 
-cmd_usage = sv_usage.on_command('')
+usage_cmd = Command('help', aliases={'usage'}, desc='查看帮助',
+                    usage='查看帮助信息。')
 
 
-@cmd_usage.handle()
+@usage_cmd.handle()
 async def _(bot: Bot, event: Event):
-    sv_list = [Rstr.FORMAT_SV_LIST.format(sv=s.sv_name, desc=f'({s.desc})' if s.desc else '')
-               for s in services.values() if not s.hidden]
-    if sv_list:
-        sv_list_str = '\n'.join(sv_list)
-    else:
-        sv_list_str = Rstr.EXPR_NO_AVAILABLE_SV
 
-    args = event.get_message().extract_plain_text().split()
-    # FIXME: handle cmd with space in cmd_name
+    cmd_list = [
+        Rstr.FORMAT_CMDS_LIST.format(
+            cmd=c.cmd,
+            desc=(c.desc if c.desc else '')
+        )
+        for c in cmdmgr.get_all_cmds(exclude_hidden_cmd=True)
+    ]
 
-    if not args:
-        await cmd_usage.send(Rstr.MSG_MAIN_USAGE_DOC.format(sv_list=sv_list_str))
+    if cmd_list:
+        cmd_list_str = '\n'.join(cmd_list).strip()
     else:
-        if args[0] in services:
-            sv = services[args[0]]
-            if len(args) == 1:
-                await cmd_usage.send(sv.get_usage_str())
-            elif sv.get_command(args[1]):
-                await cmd_usage.send(sv.get_command(args[1]).get_usage_str())
-            else:
-                await cmd_usage.send_failure(Rstr.MSG_UNKNOWN_CMD_IN_SV.format(sv=args[0], cmd=args[1]))
+        cmd_list_str = Rstr.EXPR_NO_CMDS
+
+    arg = event.get_message().extract_plain_text()
+
+    if not arg:
+        await usage_cmd.send(Rstr.MSG_MAIN_USAGE_DOC.format(cmd_list=cmd_list_str))
+    else:
+        cmd_obj = cmdmgr.fetch_cmd(arg)
+        if cmd_obj:
+            await usage_cmd.send(Rstr.MSG_CMD_USAGE.format(cmd=arg, usage=cmd_obj.get_usage_str()))
         else:
-            await cmd_usage.send_failure(Rstr.MSG_UNKNOWN_SV.format(sv=args[0]))
+            await usage_cmd.send_failure(Rstr.MSG_UNKNOWN_CMD.format(cmd=arg))

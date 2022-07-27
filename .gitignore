@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 # Test files
-testbot*
+nonutils-testbot
 /preferences/
